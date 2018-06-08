@@ -23,16 +23,16 @@ it('create message', () => {
 });
 
 it('parses stream', function() {
-	const readable = new Readable;
+	const readable = new EventEmitter;
 	var streamParser = parseStream(readable);
 	var messages = [ ];
 	streamParser.on('message', message => {
 		messages.push(message);
 	});
-	readable.emit('data', Buffer('1.s,2'));
-	readable.emit('data', Buffer('.ef;3.'));
-	readable.emit('data', Buffer('c.s,5.axcvb;'));
-	readable.emit('data', Buffer('3.dfg;3.gxx'));
+	readable.emit('data', Buffer.from('1.s,2'));
+	readable.emit('data', Buffer.from('.ef;3.'));
+	readable.emit('data', Buffer.from('c.s,5.axcvb;'));
+	readable.emit('data', Buffer.from('3.dfg;3.gxx'));
 
 	expect(messages).deep.equal([
 		[ 's', 'ef' ],
@@ -42,7 +42,7 @@ it('parses stream', function() {
 });
 
 it('fires error and continues parsing', function() {
-	const readable = new Readable;
+	const readable = new EventEmitter;
 	var streamParser = parseStream(readable);
 	var messages = [ ];
 	streamParser.on('message', message => {
@@ -54,11 +54,11 @@ it('fires error and continues parsing', function() {
 	});
 	streamParser.on('error', errorSpy);
 
-	readable.emit('data', Buffer('1.s,2'));
-	readable.emit('data', Buffer('.ef;3.'));
-	readable.emit('data', Buffer('c.s,5.asxdcvb;'));
-	readable.emit('data', Buffer('3.dfg;3.gxx'));
-	readable.emit('data', Buffer('6.A!Fy5=;0.;'));
+	readable.emit('data', Buffer.from('1.s,2'));
+	readable.emit('data', Buffer.from('.ef;3.'));
+	readable.emit('data', Buffer.from('c.s,5.asxdcvb;'));
+	readable.emit('data', Buffer.from('3.dfg;3.gxx'));
+	readable.emit('data', Buffer.from('6.A!Fy5=;0.;'));
 
 	expect(messages).deep.equal([
 		[ 's', 'ef' ],
@@ -66,5 +66,5 @@ it('fires error and continues parsing', function() {
 		[ '' ]
 	]);
 
-	expect(errorSpy).to.have.been.called.once();
+	expect(errorSpy).to.have.been.called(1);
 });
