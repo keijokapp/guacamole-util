@@ -1,6 +1,6 @@
 {
   "name": "guacamole-util",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Few utilities to parse and generate Guacamole messages",
   "main": "index.js",
   "author": "Keijo Kapp <keijo.kapp@gmail.com>",
@@ -14,7 +14,6 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "chai-spies": "^1.0.0",
     "mocha": "^5.2.0"
   }
 }

@@ -1,13 +1,10 @@
 const { EventEmitter } = require('events');
 const { Readable } = require('stream');
 const { it } = require('mocha');
-const spies = require('chai-spies');
 const chai = require('chai');
 const { createGuacamoleClient, parseMessage, createMessage, parseStream } = require('./index');
 
-chai.use(spies);
 const expect = chai.expect;
-const spy = chai.spy;
 
 it('should parse message', () => {
 	expect(parseMessage('0.;')).to.deep.equal(['']);
@@ -24,9 +21,9 @@ it('create message', () => {
 
 it('parses stream', function() {
 	const readable = new EventEmitter;
-	var streamParser = parseStream(readable);
-	var messages = [ ];
-	streamParser.on('message', message => {
+	const messages = [ ];
+	parseStream(readable,  (e, message) => {
+		expect(e).to.deep.equal(null);
 		messages.push(message);
 	});
 	readable.emit('data', Buffer.from('1.s,2'));
@@ -43,16 +40,16 @@ it('parses stream', function() {
 
 it('fires error and continues parsing', function() {
 	const readable = new EventEmitter;
-	var streamParser = parseStream(readable);
-	var messages = [ ];
-	streamParser.on('message', message => {
-		messages.push(message);
+	const messages = [ ];
+	var correctErrorFired = 0;
+	parseStream(readable,  (e, message) => {
+		if(e) {
+			expect(e.message).to.equal('Invalid token length: b;3');
+			correctErrorFired++;
+		} else {
+			messages.push(message);
+		}
 	});
-
-	var errorSpy = spy(function(e) {
-		expect(e.message).to.equal('Invalid token length: b;3');
-	});
-	streamParser.on('error', errorSpy);
 
 	readable.emit('data', Buffer.from('1.s,2'));
 	readable.emit('data', Buffer.from('.ef;3.'));
@@ -66,5 +63,25 @@ it('fires error and continues parsing', function() {
 		[ '' ]
 	]);
 
-	expect(errorSpy).to.have.been.called(1);
+	expect(correctErrorFired).to.deep.equal(1);
 });
+
+it('parses stream and then stops', function() {
+	const readable = new EventEmitter;
+	const messages = [ ];
+	const stop = parseStream(readable,  (e, message) => {
+		expect(e).to.deep.equal(null);
+		messages.push(message);
+	});
+	readable.emit('data', Buffer.from('1.s,2'));
+	readable.emit('data', Buffer.from('.ef;3.'));
+	readable.emit('data', Buffer.from('c.s,5.axcvb;'));
+	stop();
+	readable.emit('data', Buffer.from('3.dfg;3.gxx'));
+
+	expect(messages).deep.equal([
+		[ 's', 'ef' ],
+		[ 'c.s', 'axcvb' ]
+	]);
+});
+

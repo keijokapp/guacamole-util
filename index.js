@@ -1,7 +1,5 @@
 'use strict';
 
-const EventEmitter = require('events').EventEmitter;
-
 const tokenLengthRegex = /^[0-9]{1,8}$/; // Assume maximum token length 10^8-1 on base 10
 
 function parseMessage(message) {
@@ -60,23 +58,23 @@ function createMessage(tokens) {
 	return messageTokens.join(',') + ';';
 }
 
-function parseStream(readable) {
+function parseStream(readable, callback) {
 
-	const eventEmitter = new EventEmitter;
-
-	readable.on('data', data => {
+	function dataCallback(data) {
 		try {
 			for(let i = 0; i < data.length;) {
 				i = parse(data, i);
 			}
 		} catch(e) {
-			eventEmitter.emit('error', e);
+			callback(e);
 			// reset state but continue; might not be the best way to deal with it
 			tokenLength = null;
 			buffer = '';
 			command = [];
 		}
-	});
+	}
+
+	readable.on('data', dataCallback);
 
 	var tokenLength = null;
 	var buffer = '';
@@ -120,12 +118,14 @@ function parseStream(readable) {
 		token = token.slice(0, -1);
 		command.push(token);
 		if(lastCharacter === ';') {
-			eventEmitter.emit('message', command);
+			callback(null, command);
 			command = [];
 		}
 	}
 
-	return eventEmitter;
+	return function stop() {
+		readable.removeListener('data', dataCallback);
+	};
 }
 
 module.exports = {
